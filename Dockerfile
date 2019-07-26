@@ -20,7 +20,6 @@ ENV OX_BUILD_DATE=2019-03-15
 
 RUN mkdir -p /app/scripts/
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${OX_VERSION}/oxd-server-${OX_VERSION}-distribution.zip -O /oxd.zip
-cat https://ox.gluu.org/maven/org/gluu/oxd-server/${OX_VERSION}/oxd-server-${OX_VERSION}-distribution.zip
 RUN unzip ./oxd.zip -d /opt/oxd-server
 
 # ==
