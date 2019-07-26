@@ -1,2 +1,2 @@
-# oxd-docker
-oxd docker project files
+# docker-oxd
+docker oxd project files
