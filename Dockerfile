@@ -22,12 +22,6 @@ RUN mkdir -p /app/scripts/
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${OX_VERSION}/oxd-server-${OX_VERSION}-distribution.zip -O /oxd.zip
 RUN unzip ./oxd.zip -d /opt/oxd-server
 
-# ==
-# jq
-# ==
-
-RUN wget -q https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O /usr/bin/jq \
-    && chmod +x /usr/bin/jq
 
 # ====
 # misc
@@ -37,6 +31,13 @@ RUN mkdir -p /etc/certs
 COPY scripts /app/scripts
 RUN chmod +x /app/scripts/entrypoint.sh
 EXPOSE 8443 8444
+
+# =======
+# License
+# =======
+
+RUN mkdir -p /licenses
+COPY LICENSE /licenses/
 
 # =====================
 #################
@@ -103,6 +104,6 @@ ENV DEFAULT_SITE_CONFIG_UI_LOCALES ['en']
 ENV DEFAULT_SITE_CONFIG_CLAIMS_LOCALES ['en']
 ENV DEFAULT_SITE_CONFIG_CONTACTS []
 
-
+COPY oxd-server-template.yml /opt/oxd-server/conf/
 CMD ["sh", "/app/scripts/entrypoint.sh"]
 
