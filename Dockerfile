@@ -16,7 +16,7 @@ RUN apk update && apk add --no-cache \
 # ==========
 
 ENV OX_VERSION=4.0.b1
-ENV OX_BUILD_DATE=2019-03-15
+ENV OX_BUILD_DATE=2019-08-30
 
 RUN mkdir -p /app/scripts/
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${OX_VERSION}/oxd-server-${OX_VERSION}-distribution.zip -O /oxd.zip
@@ -105,5 +105,6 @@ ENV DEFAULT_SITE_CONFIG_CLAIMS_LOCALES ['en']
 ENV DEFAULT_SITE_CONFIG_CONTACTS []
 
 COPY oxd-server-template.yml /opt/oxd-server/conf/
+RUN chmod +x /app/scripts/entrypoint.sh
 CMD ["sh", "/app/scripts/entrypoint.sh"]
 
