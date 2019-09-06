@@ -37,22 +37,22 @@ logging:
 
   loggers:
     org.gluu: $GLUU_LOG_LEVEL
-    org.gluu: $XDI_LOG_LEVEL
+    org.xdi: $XDI_LOG_LEVEL
 
   appenders:
     - type: console
     - type: file
       threshold: $THRESHOLD
       logFormat: "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
-      currentLogFilename: $CURRENT_LOG_FILENAME 
+      currentLogFilename: $CURRENT_LOG_FILENAME
       archivedLogFilenamePattern: /var/log/oxd-server/oxd-server-%d{yyyy-MM-dd}-%i.log.gz
       archivedFileCount: $ARCHIVED_FILE_COUNT
       timeZone: $TIME_ZONE
-      maxFileSize: $MAX_FILE_SIZE      
+      maxFileSize: $MAX_FILE_SIZE
 
 defaultSiteConfig:
-  op_host: '$DEFAULT_SITE_CONFIG_OP_HOST'
-  op_discovery_path: '$DEFAULT_SITE_CONFIG_OP_DISCOVERY_PATH'
+  op_host: $DEFAULT_SITE_CONFIG_OP_HOST
+  op_discovery_path: $DEFAULT_SITE_CONFIG_OP_DISCOVERY_PATH
   response_types: $DEFAULT_SITE_CONFIG_RESPONSE_TYPES
   grant_type: $DEFAULT_SITE_CONFIG_GRANT_TYPES
   acr_values: $DEFAULT_SITE_CONFIG_ACR_VALUES
