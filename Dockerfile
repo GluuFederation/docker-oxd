@@ -10,7 +10,11 @@ RUN apk update && apk add --no-cache \
     wget \
     gettext \
     openssl \
-    unzip
+    unzip \
+    python \
+    python-dev \
+    py-pip \
+    build-base
 
 # ==========
 # OXD server
