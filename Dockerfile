@@ -6,15 +6,9 @@ LABEL maintainer="Gluu Inc. <support@gluu.org>"
 # Alpine packages
 # ===============
 
-RUN apk update && apk add --no-cache \
-    wget \
-    gettext \
-    openssl \
-    unzip \
-    python \
-    python-dev \
-    py-pip \
-    build-base
+RUN apk update \
+    && apk add --no-cache gettext openssl \
+    && apk add --no-cache --virtual build-deps unzip wget
 
 # ==========
 # OXD server
@@ -31,19 +25,33 @@ RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${OX_VERSION}/oxd-serv
 EXPOSE 8443 8444
 
 # =======
+# Cleanup
+# =======
+
+RUN apk del build-deps \
+    && rm -rf /var/cache/apk/*
+
+# ====
+# Tini
+# ====
+
+RUN wget -q https://github.com/krallin/tini/releases/download/v0.18.0/tini-static -O /usr/bin/tini \
+    && chmod +x /usr/bin/tini
+
+# =======
 # License
 # =======
 
 RUN mkdir -p /licenses
 COPY LICENSE /licenses/
 
-# =====================
+# ==============
 # oxd-server ENV
-# =====================
+# ==============
 
-# ==========
+# ========================
 # server configuration ENV
-# ==========
+# ========================
 ENV USE_CLIENT_AUTHENTICATION_FOR_PAT=true \
     TRUST_ALL_CERTS=false \
     TRUST_STORE_PATH='' \
@@ -62,9 +70,9 @@ ENV USE_CLIENT_AUTHENTICATION_FOR_PAT=true \
     STORAGE=h2 \
     DB_FILE_LOCATION=/opt/oxd-server/data/oxd_db
 
-# ==========
+# ==============
 # Connectors ENV
-# ==========
+# ==============
 
 ENV APPLICATION_CONNECTOR_HTTPS_PORT=8443 \
     APPLICATION_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
@@ -75,9 +83,9 @@ ENV APPLICATION_CONNECTOR_HTTPS_PORT=8443 \
     ADMIN_KEYSTORE_PASSWORD=example \
     ADMIN_KEYSTORE_VALIDATE_CERTS=false
 
-# ==========
+# ===========
 # Logging ENV
-# ==========
+# ===========
 
 ENV GLUU_LOG_LEVEL=TRACE \
     XDI_LOG_LEVEL=TRACE \
@@ -111,4 +119,6 @@ RUN chmod +x /app/scripts/entrypoint.sh
 
 COPY oxd-server-template.yml /opt/oxd-server/conf/
 RUN chmod +x /app/scripts/entrypoint.sh
-CMD ["sh", "/app/scripts/entrypoint.sh"]
+
+ENTRYPOINT ["tini", "-g", "--"]
+CMD ["/app/scripts/entrypoint.sh"]
