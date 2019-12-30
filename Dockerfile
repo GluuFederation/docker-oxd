@@ -14,8 +14,8 @@ RUN apk update \
 # OXD server
 # ==========
 
-ENV OX_VERSION=4.0.Final \
-    OX_BUILD_DATE=2019-10-17
+ENV OX_VERSION=4.1.0.Final \
+    OX_BUILD_DATE=2019-12-25
 
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${OX_VERSION}/oxd-server-${OX_VERSION}-distribution.zip -O /oxd.zip \
     && mkdir -p /opt/oxd-server \
