@@ -78,10 +78,12 @@ ENV APPLICATION_CONNECTOR_HTTPS_PORT=8443 \
     APPLICATION_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
     APPLICATION_KEYSTORE_PASSWORD=example \
     APPLICATION_KEYSTORE_VALIDATE_CERTS=false \
+    APPLICATION_KEYSTORE_CN="localhost" \
     ADMIN_CONNECTOR_HTTPS_PORT=8444 \
     ADMIN_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
     ADMIN_KEYSTORE_PASSWORD=example \
-    ADMIN_KEYSTORE_VALIDATE_CERTS=false
+    ADMIN_KEYSTORE_VALIDATE_CERTS=false \
+    ADMIN_KEYSTORE_CN="localhost"
 
 # ===========
 # Logging ENV
@@ -108,6 +110,7 @@ ENV DEFAULT_SITE_CONFIG_SCOPE ['openid', 'profile', 'email']
 ENV DEFAULT_SITE_CONFIG_UI_LOCALES ['en']
 ENV DEFAULT_SITE_CONFIG_CLAIMS_LOCALES ['en']
 ENV DEFAULT_SITE_CONFIG_CONTACTS []
+ENV GLUU_SERVER_HOST ""
 
 # ====
 # misc
@@ -119,6 +122,7 @@ RUN chmod +x /app/scripts/entrypoint.sh
 
 COPY oxd-server-template.yml /opt/oxd-server/conf/
 RUN chmod +x /app/scripts/entrypoint.sh
+RUN rm -rf /opt/oxd-server/conf/oxd-server.keystore
 
 ENTRYPOINT ["tini", "-g", "--"]
 CMD ["/app/scripts/entrypoint.sh"]
