@@ -56,7 +56,7 @@ if [ ! -f $ADMIN_KEYSTORE_PATH ]; then
         -passout pass:$ADMIN_KEYSTORE_PASSWORD
 fi
 
-sh /app/scripts/gluu_cert.sh &
+python /app/scripts/gluu_cert.py &
 
 # run the server
 sh $BIN/oxd-start.sh
