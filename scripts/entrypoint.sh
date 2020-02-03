@@ -62,14 +62,16 @@ if [ ! -f /etc/certs/gluu_https.crt ]; then
         openssl s_client -showcerts \
             -connect $GLUU_SERVER_HOST:443 </dev/null 2>/dev/null \
             | openssl x509 -outform PEM > /etc/certs/gluu_https.crt
-
-        keytool -import -trustcacerts \
-            -file /etc/certs/gluu_https.crt \
-            -alias $GLUU_SERVER_HOST \
-            -storepass changeit \
-            -keystore /usr/lib/jvm/default-jvm/jre/lib/security/cacerts \
-            -noprompt
     fi
+fi
+
+if [ -f /etc/certs/gluu_https.crt ]; then
+    keytool -import -trustcacerts \
+        -file /etc/certs/gluu_https.crt \
+        -alias gluu_https \
+        -storepass changeit \
+        -keystore /usr/lib/jvm/default-jvm/jre/lib/security/cacerts \
+        -noprompt
 fi
 
 # run the server
