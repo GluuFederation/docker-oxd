@@ -56,23 +56,7 @@ if [ ! -f $ADMIN_KEYSTORE_PATH ]; then
         -passout pass:$ADMIN_KEYSTORE_PASSWORD
 fi
 
-# import Gluu Server cert to truststore (if any)
-if [ ! -f /etc/certs/gluu_https.crt ]; then
-    if [ ! -z $GLUU_SERVER_HOST ]; then
-        openssl s_client -showcerts \
-            -connect $GLUU_SERVER_HOST:443 </dev/null 2>/dev/null \
-            | openssl x509 -outform PEM > /etc/certs/gluu_https.crt
-    fi
-fi
-
-if [ -f /etc/certs/gluu_https.crt ]; then
-    keytool -import -trustcacerts \
-        -file /etc/certs/gluu_https.crt \
-        -alias gluu_https \
-        -storepass changeit \
-        -keystore /usr/lib/jvm/default-jvm/jre/lib/security/cacerts \
-        -noprompt
-fi
+sh /app/scripts/gluu_cert.sh &
 
 # run the server
 sh $BIN/oxd-start.sh

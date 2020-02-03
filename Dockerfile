@@ -7,8 +7,8 @@ LABEL maintainer="Gluu Inc. <support@gluu.org>"
 # ===============
 
 RUN apk update \
-    && apk add --no-cache gettext openssl \
-    && apk add --no-cache --virtual build-deps unzip wget python python-dev py-pip build-base
+    && apk add --no-cache gettext openssl python \
+    && apk add --no-cache --virtual build-deps unzip wget
 
 # ==========
 # OXD server
@@ -20,16 +20,10 @@ ENV GLUU_VERSION=4.1.0.Final \
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-server-${GLUU_VERSION}-distribution.zip -O /oxd.zip \
     && mkdir -p /opt/oxd-server \
     && unzip /oxd.zip -d /opt/oxd-server \
-    && rm /oxd.zip
+    && rm /oxd.zip \
+    && rm -rf /opt/oxd-server/conf/oxd-server.keystore
 
 EXPOSE 8443 8444
-
-# =======
-# Cleanup
-# =======
-
-RUN apk del build-deps \
-    && rm -rf /var/cache/apk/*
 
 # ====
 # Tini
@@ -37,6 +31,13 @@ RUN apk del build-deps \
 
 RUN wget -q https://github.com/krallin/tini/releases/download/v0.18.0/tini-static -O /usr/bin/tini \
     && chmod +x /usr/bin/tini
+
+# =======
+# Cleanup
+# =======
+
+RUN apk del build-deps \
+    && rm -rf /var/cache/apk/*
 
 # =======
 # License
@@ -118,11 +119,8 @@ ENV GLUU_SERVER_HOST ""
 
 RUN mkdir -p /etc/certs /app
 COPY scripts /app/scripts
-RUN chmod +x /app/scripts/entrypoint.sh
-
 COPY oxd-server-template.yml /opt/oxd-server/conf/
 RUN chmod +x /app/scripts/entrypoint.sh
-RUN rm -rf /opt/oxd-server/conf/oxd-server.keystore
 
 ENTRYPOINT ["tini", "-g", "--"]
 CMD ["/app/scripts/entrypoint.sh"]
