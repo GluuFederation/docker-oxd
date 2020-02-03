@@ -8,7 +8,7 @@ LABEL maintainer="Gluu Inc. <support@gluu.org>"
 
 RUN apk update \
     && apk add --no-cache gettext openssl \
-    && apk add --no-cache --virtual build-deps unzip wget
+    && apk add --no-cache --virtual build-deps unzip wget python python-dev py-pip build-base
 
 # ==========
 # OXD server
