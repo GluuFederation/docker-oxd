@@ -7,29 +7,23 @@ LABEL maintainer="Gluu Inc. <support@gluu.org>"
 # ===============
 
 RUN apk update \
-    && apk add --no-cache gettext openssl \
-    && apk add --no-cache --virtual build-deps unzip wget python python-dev py-pip build-base
+    && apk add --no-cache gettext openssl python \
+    && apk add --no-cache --virtual build-deps unzip wget
 
 # ==========
 # OXD server
 # ==========
 
-ENV OX_VERSION=4.0.Final \
-    OX_BUILD_DATE=2019-10-17
+ENV GLUU_VERSION=4.0.Final \
+    GLUU_BUILD_DATE=2019-10-17
 
-RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${OX_VERSION}/oxd-server-${OX_VERSION}-distribution.zip -O /oxd.zip \
+RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-server-${GLUU_VERSION}-distribution.zip -O /oxd.zip \
     && mkdir -p /opt/oxd-server \
     && unzip /oxd.zip -d /opt/oxd-server \
-    && rm /oxd.zip
+    && rm /oxd.zip \
+    && rm -rf /opt/oxd-server/conf/oxd-server.keystore
 
 EXPOSE 8443 8444
-
-# =======
-# Cleanup
-# =======
-
-RUN apk del build-deps \
-    && rm -rf /var/cache/apk/*
 
 # ====
 # Tini
@@ -37,6 +31,13 @@ RUN apk del build-deps \
 
 RUN wget -q https://github.com/krallin/tini/releases/download/v0.18.0/tini-static -O /usr/bin/tini \
     && chmod +x /usr/bin/tini
+
+# =======
+# Cleanup
+# =======
+
+RUN apk del build-deps \
+    && rm -rf /var/cache/apk/*
 
 # =======
 # License
@@ -78,10 +79,12 @@ ENV APPLICATION_CONNECTOR_HTTPS_PORT=8443 \
     APPLICATION_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
     APPLICATION_KEYSTORE_PASSWORD=example \
     APPLICATION_KEYSTORE_VALIDATE_CERTS=false \
+    APPLICATION_KEYSTORE_CN="localhost" \
     ADMIN_CONNECTOR_HTTPS_PORT=8444 \
     ADMIN_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
     ADMIN_KEYSTORE_PASSWORD=example \
-    ADMIN_KEYSTORE_VALIDATE_CERTS=false
+    ADMIN_KEYSTORE_VALIDATE_CERTS=false \
+    ADMIN_KEYSTORE_CN="localhost"
 
 # ===========
 # Logging ENV
@@ -108,6 +111,7 @@ ENV DEFAULT_SITE_CONFIG_SCOPE ['openid', 'profile', 'email']
 ENV DEFAULT_SITE_CONFIG_UI_LOCALES ['en']
 ENV DEFAULT_SITE_CONFIG_CLAIMS_LOCALES ['en']
 ENV DEFAULT_SITE_CONFIG_CONTACTS []
+ENV GLUU_SERVER_HOST ""
 
 # ====
 # misc
@@ -115,8 +119,6 @@ ENV DEFAULT_SITE_CONFIG_CONTACTS []
 
 RUN mkdir -p /etc/certs /app
 COPY scripts /app/scripts
-RUN chmod +x /app/scripts/entrypoint.sh
-
 COPY oxd-server-template.yml /opt/oxd-server/conf/
 RUN chmod +x /app/scripts/entrypoint.sh
 
