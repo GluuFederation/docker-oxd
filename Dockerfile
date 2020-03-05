@@ -117,6 +117,14 @@ ENV GLUU_SERVER_HOST ""
 # misc
 # ====
 
+LABEL name="oxd" \
+    maintainer="Gluu Inc. <support@gluu.org>" \
+    vendor="Gluu Federation" \
+    version="4.1.0" \
+    release="01" \
+    summary="Gluu oxd" \
+    description="Client software to secure apps with OAuth 2.0, OpenID Connect, and UMA"
+
 RUN mkdir -p /etc/certs /app
 COPY scripts /app/scripts
 COPY oxd-server-template.yml /opt/oxd-server/conf/
