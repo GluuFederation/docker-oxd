@@ -120,7 +120,7 @@ ENV GLUU_SERVER_HOST ""
 LABEL name="oxd" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
-    version="4.1.0" \
+    version="4.1.1" \
     release="01" \
     summary="Gluu oxd" \
     description="Client software to secure apps with OAuth 2.0, OpenID Connect, and UMA"
