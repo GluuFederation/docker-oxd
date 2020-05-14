@@ -1,21 +1,21 @@
-FROM openjdk:8-jre-alpine
-
-LABEL maintainer="Gluu Inc. <support@gluu.org>"
+FROM adoptopenjdk/openjdk11:alpine-jre
 
 # ===============
 # Alpine packages
 # ===============
 
 RUN apk update \
-    && apk add --no-cache gettext openssl python \
-    && apk add --no-cache --virtual build-deps unzip wget
+    && apk add --no-cache gettext openssl python3 \
+    && apk add --no-cache --virtual build-deps unzip wget \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/bin/pip
 
 # ==========
 # OXD server
 # ==========
 
-ENV GLUU_VERSION=4.1.0.Final \
-    GLUU_BUILD_DATE="2020-02-14 11:47"
+ARG GLUU_VERSION=4.2.0-SNAPSHOT
+ARG GLUU_BUILD_DATE="2020-05-06 17:52"
 
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-server-${GLUU_VERSION}-distribution.zip -O /oxd.zip \
     && mkdir -p /opt/oxd-server \
@@ -24,13 +24,6 @@ RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-se
     && rm -rf /opt/oxd-server/conf/oxd-server.keystore
 
 EXPOSE 8443 8444
-
-# ====
-# Tini
-# ====
-
-RUN wget -q https://github.com/krallin/tini/releases/download/v0.18.0/tini-static -O /usr/bin/tini \
-    && chmod +x /usr/bin/tini
 
 # =======
 # Cleanup
@@ -120,8 +113,8 @@ ENV GLUU_SERVER_HOST ""
 LABEL name="oxd" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
-    version="4.1.1" \
-    release="01" \
+    version="4.2.0" \
+    release="dev" \
     summary="Gluu oxd" \
     description="Client software to secure apps with OAuth 2.0, OpenID Connect, and UMA"
 
@@ -129,6 +122,10 @@ RUN mkdir -p /etc/certs /app
 COPY scripts /app/scripts
 COPY oxd-server-template.yml /opt/oxd-server/conf/
 RUN chmod +x /app/scripts/entrypoint.sh
+# symlink JVM
+RUN mkdir -p /usr/lib/jvm/default-jvm /usr/java/latest \
+    && ln -sf /opt/java/openjdk /usr/lib/jvm/default-jvm/jre \
+    && ln -sf /usr/lib/jvm/default-jvm/jre /usr/java/latest/jre
 
-ENTRYPOINT ["tini", "-g", "--"]
-CMD ["/app/scripts/entrypoint.sh"]
+ENTRYPOINT ["tini", "-e", "143", "-g", "--"]
+CMD ["sh", "/app/scripts/entrypoint.sh"]
