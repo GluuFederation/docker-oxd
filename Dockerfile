@@ -5,7 +5,7 @@ FROM adoptopenjdk/openjdk11:alpine-jre
 # ===============
 
 RUN apk update \
-    && apk add --no-cache gettext openssl python3 \
+    && apk add --no-cache gettext openssl python3 tini \
     && apk add --no-cache --virtual build-deps unzip wget \
     && ln -sf /usr/bin/python3 /usr/bin/python \
     && ln -sf /usr/bin/pip3 /usr/bin/pip
@@ -120,7 +120,7 @@ LABEL name="oxd" \
 
 RUN mkdir -p /etc/certs /app
 COPY scripts /app/scripts
-COPY oxd-server-template.yml /opt/oxd-server/conf/
+COPY templates/oxd-server-template.yml /opt/oxd-server/conf/
 RUN chmod +x /app/scripts/entrypoint.sh
 # symlink JVM
 RUN mkdir -p /usr/lib/jvm/default-jvm /usr/java/latest \

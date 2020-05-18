@@ -65,7 +65,7 @@ def get_server_certificate(host, port, filepath, server_hostname=""):
     cert = ssl.DER_cert_to_PEM_cert(sock.getpeercert(True))
 
     with open(filepath, "w") as f:
-        f.write(cert.decode())
+        f.write(cert)
 
 
 def main():
