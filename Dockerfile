@@ -11,9 +11,7 @@ RUN mkdir -p /usr/lib/jvm/default-jvm /usr/java/latest \
 
 RUN apk update \
     && apk add --no-cache gettext openssl python3 tini \
-    && apk add --no-cache --virtual build-deps unzip wget \
-    && ln -sf /usr/bin/python3 /usr/bin/python \
-    && ln -sf /usr/bin/pip3 /usr/bin/pip
+    && apk add --no-cache --virtual build-deps unzip wget
 
 # ==========
 # OXD server
