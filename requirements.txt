@@ -1,0 +1,2 @@
+ruamel.yaml==0.16.10
+-e git+https://github.com/GluuFederation/pygluu-containerlib@97f8240aef2bc1af486d55bb0d3a1740a0a89a20#egg=pygluu-containerlib

@@ -10,15 +10,15 @@ RUN mkdir -p /usr/lib/jvm/default-jvm /usr/java/latest \
 # ===============
 
 RUN apk update \
-    && apk add --no-cache gettext openssl python3 tini \
-    && apk add --no-cache --virtual build-deps unzip wget
+    && apk add --no-cache openssl py3-pip tini \
+    && apk add --no-cache --virtual build-deps unzip wget git
 
 # ==========
 # OXD server
 # ==========
 
 ARG GLUU_VERSION=4.2.0-SNAPSHOT
-ARG GLUU_BUILD_DATE="2020-05-18 11:37"
+ARG GLUU_BUILD_DATE="2020-05-30 08:22"
 
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-server-${GLUU_VERSION}-distribution.zip -O /oxd.zip \
     && mkdir -p /opt/oxd-server \
@@ -27,6 +27,15 @@ RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-se
     && rm -rf /opt/oxd-server/conf/oxd-server.keystore
 
 EXPOSE 8443 8444
+
+# ======
+# Python
+# ======
+
+RUN apk add --no-cache py3-cryptography
+COPY requirements.txt /tmp/requirements.txt
+RUN pip3 install -U pip \
+    && pip3 install --no-cache-dir -r /tmp/requirements.txt
 
 # =======
 # Cleanup
@@ -42,72 +51,17 @@ RUN apk del build-deps \
 RUN mkdir -p /licenses
 COPY LICENSE /licenses/
 
-# ==============
-# oxd-server ENV
-# ==============
+# ===
+# ENV
+# ===
 
-# ========================
-# server configuration ENV
-# ========================
-ENV USE_CLIENT_AUTHENTICATION_FOR_PAT=true \
-    TRUST_ALL_CERTS=false \
-    TRUST_STORE_PATH='' \
-    TRUST_STORE_PASSWORD='' \
-    CRYPT_PROVIDER_KEY_STORE_PATH='' \
-    CRYPT_PROVIDER_KEY_STORE_PASSWORD='' \
-    CRYPT_PROVIDER_DN_NAME='' \
-    SUPPORT_GOOGLE_LOGOUT=true \
-    STATE_EXPIRATION_IN_MINUTES=5 \
-    NONCE_EXPIRATION_IN_MINUTES=5 \
-    PUBLIC_OP_KEY_CACHE_EXPIRATION_IN_MINUTES=60 \
-    PROTECT_COMMANDS_WITH_ACCESS_TOKEN=true \
-    UMA2_AUTO_REGISTER_CLAIMS_GATHERING_ENDPOINT_AS_REDIRECT_URI_OF_CLIENT=false \
-    ADD_CLIENT_CREDENTIALS_GRANT_TYPE_AUTOMATICALLY_DURING_CLIENT_REGISTRATION=true \
-    MIGRATION_SOURCE_FOLDER_PATH='' \
-    STORAGE=h2 \
-    DB_FILE_LOCATION=/opt/oxd-server/data/oxd_db
-
-# ==============
-# Connectors ENV
-# ==============
-
-ENV APPLICATION_CONNECTOR_HTTPS_PORT=8443 \
-    APPLICATION_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
-    APPLICATION_KEYSTORE_PASSWORD=example \
-    APPLICATION_KEYSTORE_VALIDATE_CERTS=false \
+ENV APPLICATION_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
     APPLICATION_KEYSTORE_CN="localhost" \
-    ADMIN_CONNECTOR_HTTPS_PORT=8444 \
+    APPLICATION_KEYSTORE_PASSWORD_FILE=/etc/gluu/conf/app_keystore_password \
     ADMIN_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
-    ADMIN_KEYSTORE_PASSWORD=example \
-    ADMIN_KEYSTORE_VALIDATE_CERTS=false \
-    ADMIN_KEYSTORE_CN="localhost"
-
-# ===========
-# Logging ENV
-# ===========
-
-ENV GLUU_LOG_LEVEL=TRACE \
-    XDI_LOG_LEVEL=TRACE \
-    THRESHOLD=TRACE \
-    CURRENT_LOG_FILENAME=/var/log/oxd-server/oxd-server.log \
-    ARCHIVED_FILE_COUNT=7 \
-    TIME_ZONE=UTC \
-    MAX_FILE_SIZE=10MB
-
-# ==========
-# DefaultSiteConfig ENV
-# ==========
-
-ENV DEFAULT_SITE_CONFIG_OP_HOST="" \
-    DEFAULT_SITE_CONFIG_OP_DISCOVERY_PATH=""
-ENV DEFAULT_SITE_CONFIG_RESPONSE_TYPES ['code']
-ENV DEFAULT_SITE_CONFIG_GRANT_TYPES ['authorization_code']
-ENV DEFAULT_SITE_CONFIG_ACR_VALUES ['']
-ENV DEFAULT_SITE_CONFIG_SCOPE ['openid', 'profile', 'email']
-ENV DEFAULT_SITE_CONFIG_UI_LOCALES ['en']
-ENV DEFAULT_SITE_CONFIG_CLAIMS_LOCALES ['en']
-ENV DEFAULT_SITE_CONFIG_CONTACTS []
-ENV GLUU_SERVER_HOST ""
+    ADMIN_KEYSTORE_CN="localhost" \
+    ADMIN_KEYSTORE_PASSWORD_FILE=/etc/gluu/conf/admin_keystore_password \
+    GLUU_SERVER_HOST=""
 
 # ====
 # misc
@@ -121,9 +75,9 @@ LABEL name="oxd" \
     summary="Gluu oxd" \
     description="Client software to secure apps with OAuth 2.0, OpenID Connect, and UMA"
 
-RUN mkdir -p /etc/certs /app
+RUN mkdir -p /etc/certs /app/templates/ /deploy /etc/gluu/conf
 COPY scripts /app/scripts
-COPY templates/oxd-server-template.yml /opt/oxd-server/conf/
+COPY templates/*.tmpl /app/templates/
 RUN chmod +x /app/scripts/entrypoint.sh
 
 ENTRYPOINT ["tini", "-e", "143", "-g", "--"]
