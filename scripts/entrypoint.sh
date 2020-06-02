@@ -74,7 +74,7 @@ if [ ! -f /deploy/touched ]; then
     touch /deploy/touched
 fi
 
-python3 /app/scripts/gluu_cert.py &
+# python3 /app/scripts/gluu_cert.py &
 
 # cleanup
 rm -f $APPLICATION_KEYSTORE_PASSWORD_FILE

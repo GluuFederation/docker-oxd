@@ -11,25 +11,25 @@ from pygluu.containerlib.persistence import render_ldap_properties
 from pygluu.containerlib.persistence import render_salt
 from pygluu.containerlib.persistence import sync_couchbase_truststore
 from pygluu.containerlib.persistence import sync_ldap_truststore
-# from pygluu.containerlib.utils import cert_to_truststore
-# from pygluu.containerlib.utils import get_server_certificate
+from pygluu.containerlib.utils import cert_to_truststore
+from pygluu.containerlib.utils import get_server_certificate
 
 manager = get_manager()
 
 
-# def get_gluu_cert():
-#     if not os.environ.get("GLUU_SERVER_HOST", ""):
-#         return
+def get_gluu_cert():
+    if not os.environ.get("GLUU_SERVER_HOST", ""):
+        return
 
-#     if not os.path.isfile("/etc/certs/gluu_https.crt"):
-#         get_server_certificate(manager.config.get("hostname"), 443, "/etc/certs/gluu_https.crt")
+    if not os.path.isfile("/etc/certs/gluu_https.crt"):
+        get_server_certificate(manager.config.get("hostname"), 443, "/etc/certs/gluu_https.crt")
 
-#     cert_to_truststore(
-#         "gluu_https",
-#         "/etc/certs/gluu_https.crt",
-#         "/usr/lib/jvm/default-jvm/jre/lib/security/cacerts",
-#         "changeit",
-#     )
+    cert_to_truststore(
+        "gluu_https",
+        "/etc/certs/gluu_https.crt",
+        "/usr/lib/jvm/default-jvm/jre/lib/security/cacerts",
+        "changeit",
+    )
 
 
 def render_oxd_config():
@@ -99,7 +99,8 @@ def main():
     if persistence_type == "hybrid":
         render_hybrid_properties("/etc/gluu/conf/gluu-hybrid.properties")
 
-    # @TODO: oxd-server config YAML
+    get_gluu_cert()
+
     # if not os.path.isfile("/opt/oxd-server/conf/oxd-server.yml"):
     render_oxd_config()
 
