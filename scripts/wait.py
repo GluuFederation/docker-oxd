@@ -32,6 +32,17 @@ def main():
         )
         sys.exit(1)
 
+    storage = os.environ.get("STORAGE", "h2")
+    if storage not in ("h2", "gluu_server_configuration"):
+        logger.error(
+            "Unsupported STORAGE value; "
+            "please choose one of {}".format(", ".join(["h2", "gluu_server_configuration"]))
+        )
+        sys.exit(1)
+
+    if storage == "h2":
+        return
+
     manager = get_manager()
     deps = ["config", "secret"]
 
@@ -39,9 +50,6 @@ def main():
         deps += ["ldap", "couchbase"]
     else:
         deps.append(persistence_type)
-
-    # deps.append("oxauth")
-    # deps.append("oxd")
     wait_for(manager, deps)
 
 

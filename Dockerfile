@@ -24,7 +24,7 @@ RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-se
     && mkdir -p /opt/oxd-server \
     && unzip /oxd.zip -d /opt/oxd-server \
     && rm /oxd.zip \
-    && rm -rf /opt/oxd-server/conf/oxd-server.keystore
+    && rm -rf /opt/oxd-server/conf/oxd-server.keystore /opt/oxd-server/conf/oxd-server.yml
 
 EXPOSE 8443 8444
 
@@ -51,9 +51,60 @@ RUN apk del build-deps \
 RUN mkdir -p /licenses
 COPY LICENSE /licenses/
 
-# ===
-# ENV
-# ===
+# ==========
+# Config ENV
+# ==========
+
+ENV GLUU_CONFIG_ADAPTER=consul \
+    GLUU_CONFIG_CONSUL_HOST=localhost \
+    GLUU_CONFIG_CONSUL_PORT=8500 \
+    GLUU_CONFIG_CONSUL_CONSISTENCY=stale \
+    GLUU_CONFIG_CONSUL_SCHEME=http \
+    GLUU_CONFIG_CONSUL_VERIFY=false \
+    GLUU_CONFIG_CONSUL_CACERT_FILE=/etc/certs/consul_ca.crt \
+    GLUU_CONFIG_CONSUL_CERT_FILE=/etc/certs/consul_client.crt \
+    GLUU_CONFIG_CONSUL_KEY_FILE=/etc/certs/consul_client.key \
+    GLUU_CONFIG_CONSUL_TOKEN_FILE=/etc/certs/consul_token \
+    GLUU_CONFIG_KUBERNETES_NAMESPACE=default \
+    GLUU_CONFIG_KUBERNETES_CONFIGMAP=gluu \
+    GLUU_CONFIG_KUBERNETES_USE_KUBE_CONFIG=false
+
+# ==========
+# Secret ENV
+# ==========
+
+ENV GLUU_SECRET_ADAPTER=vault \
+    GLUU_SECRET_VAULT_SCHEME=http \
+    GLUU_SECRET_VAULT_HOST=localhost \
+    GLUU_SECRET_VAULT_PORT=8200 \
+    GLUU_SECRET_VAULT_VERIFY=false \
+    GLUU_SECRET_VAULT_ROLE_ID_FILE=/etc/certs/vault_role_id \
+    GLUU_SECRET_VAULT_SECRET_ID_FILE=/etc/certs/vault_secret_id \
+    GLUU_SECRET_VAULT_CERT_FILE=/etc/certs/vault_client.crt \
+    GLUU_SECRET_VAULT_KEY_FILE=/etc/certs/vault_client.key \
+    GLUU_SECRET_VAULT_CACERT_FILE=/etc/certs/vault_ca.crt \
+    GLUU_SECRET_KUBERNETES_NAMESPACE=default \
+    GLUU_SECRET_KUBERNETES_SECRET=gluu \
+    GLUU_SECRET_KUBERNETES_USE_KUBE_CONFIG=false
+
+# ===============
+# Persistence ENV
+# ===============
+
+ENV GLUU_PERSISTENCE_TYPE=ldap \
+    GLUU_PERSISTENCE_LDAP_MAPPING=default \
+    GLUU_LDAP_URL=localhost:1636 \
+    GLUU_COUCHBASE_URL=localhost \
+    GLUU_COUCHBASE_USER=admin \
+    GLUU_COUCHBASE_CERT_FILE=/etc/certs/couchbase.crt \
+    GLUU_COUCHBASE_PASSWORD_FILE=/etc/gluu/conf/couchbase_password \
+    GLUU_COUCHBASE_CONN_TIMEOUT=10000 \
+    GLUU_COUCHBASE_CONN_MAX_WAIT=20000 \
+    GLUU_COUCHBASE_SCAN_CONSISTENCY=not_bounded
+
+# =======
+# oxD ENV
+# =======
 
 ENV APPLICATION_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
     APPLICATION_KEYSTORE_CN="localhost" \
@@ -61,7 +112,16 @@ ENV APPLICATION_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
     ADMIN_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
     ADMIN_KEYSTORE_CN="localhost" \
     ADMIN_KEYSTORE_PASSWORD_FILE=/etc/gluu/conf/admin_keystore_password \
+    STORAGE=h2 \
     GLUU_SERVER_HOST=""
+
+# ===========
+# Generic ENV
+# ===========
+
+ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
+    GLUU_WAIT_MAX_TIME=300 \
+    GLUU_WAIT_SLEEP_DURATION=10
 
 # ====
 # misc

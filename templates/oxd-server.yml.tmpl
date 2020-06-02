@@ -24,16 +24,9 @@ enable_tracing: false
 tracer: 'jaeger'
 tracer_host: 'localhost'
 tracer_port: 5775
-# storage: h2
-# storage_configuration:
-#   dbFileLocation: /opt/oxd-server/data/oxd_db
-
-storage: gluu_server_configuration
+storage: h2
 storage_configuration:
-  baseDn: o=gluu
-  type: /etc/gluu/conf/gluu.properties
-  connection: /etc/gluu/conf/gluu-ldap.properties
-  salt: /etc/gluu/conf/salt
+  dbFileLocation: /opt/oxd-server/data/oxd_db
 
 # Connectors
 server:

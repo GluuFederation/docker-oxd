@@ -33,8 +33,6 @@ def get_gluu_cert():
 
 
 def render_oxd_config():
-    persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
-
     app_keystore_file = os.environ.get("APPLICATION_KEYSTORE_PATH", "/opt/oxd-server/conf/oxd-server.keystore")
     admin_keystore_file = os.environ.get("ADMIN_KEYSTORE_PATH", "/opt/oxd-server/conf/oxd-server.keystore")
 
@@ -57,18 +55,29 @@ def render_oxd_config():
     with open("/app/templates/oxd-server.yml.tmpl") as f:
         data = safe_load(f.read())
 
-    if persistence_type == "ldap":
-        conn = "gluu-ldap.properties"
-    elif persistence_type == "couchbase":
-        conn = "gluu-couchbase.properties"
-    else:
-        conn = "gluu-hybrid.properties"
-
-    data["storage_configuration"]["connection"] = f"/etc/gluu/conf/{conn}"
     data["server"]["applicationConnectors"][0]["keyStorePassword"] = app_keystore_password
     data["server"]["applicationConnectors"][0]["keyStorePath"] = app_keystore_file
     data["server"]["adminConnectors"][0]["keyStorePassword"] = admin_keystore_password
     data["server"]["adminConnectors"][0]["keyStorePath"] = admin_keystore_file
+
+    storage = os.environ.get("STORAGE", "h2")
+
+    if storage == "gluu_server_configuration":
+        data["storage"] = storage
+
+        persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
+        if persistence_type == "ldap":
+            conn = "gluu-ldap.properties"
+        elif persistence_type == "couchbase":
+            conn = "gluu-couchbase.properties"
+        else:
+            conn = "gluu-hybrid.properties"
+
+        data["storage_configuration"]["baseDn"] = "o=gluu"
+        data["storage_configuration"]["type"] = "/etc/gluu/conf/gluu.properties"
+        data["storage_configuration"]["connection"] = f"/etc/gluu/conf/{conn}"
+        data["storage_configuration"]["salt"] = "/etc/gluu/conf/salt"
+        data["storage_configuration"].pop("dbFileLocation", None)
 
     with open("/opt/oxd-server/conf/oxd-server.yml", "w") as f:
         f.write(safe_dump(data))
@@ -76,32 +85,32 @@ def render_oxd_config():
 
 def main():
     persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
+    storage = os.environ.get("STORAGE", "h2")
 
-    render_salt(manager, "/app/templates/salt.tmpl", "/etc/gluu/conf/salt")
-    render_gluu_properties("/app/templates/gluu.properties.tmpl", "/etc/gluu/conf/gluu.properties")
+    if storage == "gluu_server_configuration":
+        render_salt(manager, "/app/templates/salt.tmpl", "/etc/gluu/conf/salt")
+        render_gluu_properties("/app/templates/gluu.properties.tmpl", "/etc/gluu/conf/gluu.properties")
 
-    if persistence_type in ("ldap", "hybrid"):
-        render_ldap_properties(
-            manager,
-            "/app/templates/gluu-ldap.properties.tmpl",
-            "/etc/gluu/conf/gluu-ldap.properties",
-        )
-        sync_ldap_truststore(manager)
+        if persistence_type in ("ldap", "hybrid"):
+            render_ldap_properties(
+                manager,
+                "/app/templates/gluu-ldap.properties.tmpl",
+                "/etc/gluu/conf/gluu-ldap.properties",
+            )
+            sync_ldap_truststore(manager)
 
-    if persistence_type in ("couchbase", "hybrid"):
-        render_couchbase_properties(
-            manager,
-            "/app/templates/gluu-couchbase.properties.tmpl",
-            "/etc/gluu/conf/gluu-couchbase.properties",
-        )
-        sync_couchbase_truststore(manager)
+        if persistence_type in ("couchbase", "hybrid"):
+            render_couchbase_properties(
+                manager,
+                "/app/templates/gluu-couchbase.properties.tmpl",
+                "/etc/gluu/conf/gluu-couchbase.properties",
+            )
+            sync_couchbase_truststore(manager)
 
-    if persistence_type == "hybrid":
-        render_hybrid_properties("/etc/gluu/conf/gluu-hybrid.properties")
+        if persistence_type == "hybrid":
+            render_hybrid_properties("/etc/gluu/conf/gluu-hybrid.properties")
 
     get_gluu_cert()
-
-    # if not os.path.isfile("/opt/oxd-server/conf/oxd-server.yml"):
     render_oxd_config()
 
 
