@@ -61,11 +61,11 @@ def render_oxd_config():
     data["server"]["adminConnectors"][0]["keyStorePath"] = admin_keystore_file
 
     storage = os.environ.get("STORAGE", "h2")
+    data["storage"] = storage
 
     if storage == "gluu_server_configuration":
-        data["storage"] = storage
-
         persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
+
         if persistence_type == "ldap":
             conn = "gluu-ldap.properties"
         elif persistence_type == "couchbase":
@@ -77,6 +77,15 @@ def render_oxd_config():
         data["storage_configuration"]["type"] = "/etc/gluu/conf/gluu.properties"
         data["storage_configuration"]["connection"] = f"/etc/gluu/conf/{conn}"
         data["storage_configuration"]["salt"] = "/etc/gluu/conf/salt"
+        data["storage_configuration"].pop("dbFileLocation", None)
+
+    if storage == "redis":
+        redis_type = os.environ.get("GLUU_REDIS_TYPE", "STANDALONE")
+        if redis_type not in ("STANDALONE", "CLUSTER"):
+            redis_type = "STANDALONE"
+
+        data["storage_configuration"]["servers"] = os.environ.get("GLUU_REDIS_URL", "localhost:6379")
+        data["storage_configuration"]["redisProviderType"] = redis_type
         data["storage_configuration"].pop("dbFileLocation", None)
 
     with open("/opt/oxd-server/conf/oxd-server.yml", "w") as f:
