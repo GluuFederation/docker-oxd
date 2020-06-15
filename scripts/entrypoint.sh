@@ -71,9 +71,6 @@ fi
 
 # python3 /app/scripts/gluu_cert.py &
 
-# cleanup
-rm -f $APPLICATION_KEYSTORE_PASSWORD_FILE
-rm -f $ADMIN_KEYSTORE_PASSWORD_FILE
 
 # run the server
 exec sh /opt/oxd-server/bin/oxd-start.sh
