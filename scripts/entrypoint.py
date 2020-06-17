@@ -13,14 +13,14 @@ from pygluu.containerlib.persistence import sync_couchbase_truststore
 from pygluu.containerlib.persistence import sync_ldap_truststore
 from pygluu.containerlib.utils import cert_to_truststore
 from pygluu.containerlib.utils import get_server_certificate
+from pygluu.containerlib.utils import get_random_chars
+from pygluu.containerlib.utils import exec_cmd
+
 
 manager = get_manager()
 
 
 def get_gluu_cert():
-    if not os.environ.get("GLUU_SERVER_HOST", ""):
-        return
-
     if not os.path.isfile("/etc/certs/gluu_https.crt"):
         get_server_certificate(manager.config.get("hostname"), 443, "/etc/certs/gluu_https.crt")
 
@@ -32,59 +32,110 @@ def get_gluu_cert():
     )
 
 
+def generate_x509(cert_file, key_file, cert_cn):
+    out, err, code = exec_cmd(
+        "openssl req -x509 -newkey rsa:2048 "
+        f"-keyout {key_file} "
+        f"-out {cert_file} "
+        f"-subj '/CN={cert_cn}' "
+        "-days 365 "
+        "-nodes"
+    )
+    assert code == 0, "Failed to generate application cert and key; reason={}".format(err.decode())
+
+
+def generate_keystore(cert_file, key_file, keystore_file, keystore_password):
+    out, err, code = exec_cmd(
+        "openssl pkcs12 -export -name oxd-server "
+        f"-out {keystore_file} "
+        f"-inkey {key_file} "
+        f"-in {cert_file} "
+        f"-passout pass:{keystore_password}"
+    )
+    assert code == 0, "Failed to generate application keystore; reason={}".format(err.decode())
+
+
+class Connector:
+    def __init__(self, manager, type_):
+        self.manager = manager
+        self.type = type_
+        assert self.type in ("application", "admin")
+
+    @property
+    def cert_file(self):
+        return f"/etc/certs/oxd_{self.type}.crt"
+
+    @property
+    def key_file(self):
+        return f"/etc/certs/oxd_{self.type}.key"
+
+    @property
+    def keystore_file(self):
+        return f"/etc/certs/oxd_{self.type}.keystore"
+
+    @property
+    def cert_cn(self):
+        return os.environ.get(f"{self.type.upper()}_KEYSTORE_CN", "localhost")
+
+    def sync_x509(self):
+        try:
+            self.manager.secret.to_file(f"oxd_{self.type}_cert", self.cert_file)
+            self.manager.secret.to_file(f"oxd_{self.type}_key", self.key_file)
+        except TypeError:
+            generate_x509(self.cert_file, self.key_file, self.cert_cn)
+            # save cert and key to secrets for later use
+            self.manager.secret.from_file(f"oxd_{self.type}_cert", self.cert_file)
+            self.manager.secret.from_file(f"oxd_{self.type}_key", self.key_file)
+
+    def get_keystore_password(self):
+        password = manager.secret.get(f"oxd_{self.type}_keystore_password")
+
+        if not password:
+            password = get_random_chars()
+            manager.secret.set(f"oxd_{self.type}_keystore_password", password)
+        return password
+
+    def sync_keystore(self):
+        # if there are no secrets, ``TypeError`` will be thrown
+        try:
+            self.manager.secret.to_file(
+                f"oxd_{self.type}_jks_base64", self.keystore_file, decode=True, binary_mode=True,
+            )
+        except TypeError:
+            generate_keystore(self.cert_file, self.key_file, self.keystore_file, self.get_keystore_password())
+            # save keystore to secrets for later use
+            self.manager.secret.from_file(
+                f"oxd_{self.type}_jks_base64", self.keystore_file, encode=True, binary_mode=True,
+            )
+
+    def sync(self):
+        self.sync_x509()
+        self.sync_keystore()
+
+
 def render_oxd_config():
-    app_keystore_file = os.environ.get("APPLICATION_KEYSTORE_PATH", "/opt/oxd-server/conf/oxd-server.keystore")
-    admin_keystore_file = os.environ.get("ADMIN_KEYSTORE_PATH", "/opt/oxd-server/conf/oxd-server.keystore")
-
-    app_keystore_password = "example"
-    app_keystore_password_file = os.environ.get(
-        "APPLICATION_KEYSTORE_PASSWORD_FILE",
-        "/etc/gluu/conf/app_keystore_password",
-    )
-    with open(app_keystore_password_file) as f:
-        app_keystore_password = f.read().strip()
-
-    admin_keystore_password = "example"
-    admin_keystore_password_file = os.environ.get(
-        "ADMIN_KEYSTORE_PASSWORD_FILE",
-        "/etc/gluu/conf/admin_keystore_password",
-    )
-    with open(admin_keystore_password_file) as f:
-        admin_keystore_password = f.read().strip()
+    app_connector = Connector(manager, "application")
+    app_connector.sync()
+    admin_connector = Connector(manager, "admin")
+    admin_connector.sync()
 
     with open("/app/templates/oxd-server.yml.tmpl") as f:
         data = safe_load(f.read())
 
-    data["server"]["applicationConnectors"][0]["keyStorePassword"] = app_keystore_password
-    data["server"]["applicationConnectors"][0]["keyStorePath"] = app_keystore_file
-    data["server"]["adminConnectors"][0]["keyStorePassword"] = admin_keystore_password
-    data["server"]["adminConnectors"][0]["keyStorePath"] = admin_keystore_file
+    data["server"]["applicationConnectors"][0]["keyStorePassword"] = app_connector.get_keystore_password()
+    data["server"]["applicationConnectors"][0]["keyStorePath"] = app_connector.keystore_file
+    data["server"]["adminConnectors"][0]["keyStorePassword"] = admin_connector.get_keystore_password()
+    data["server"]["adminConnectors"][0]["keyStorePath"] = admin_connector.keystore_file
 
-    storage = os.environ.get("STORAGE", "h2")
-    data["storage"] = storage
+    persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
 
-    if storage == "gluu_server_configuration":
-        persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
+    if persistence_type in ("ldap", "hybrid"):
+        conn = "gluu-ldap.properties"
+    else:
+        # likely "couchbase"
+        conn = "gluu-couchbase.properties"
 
-        if persistence_type in ("ldap", "hybrid"):
-            conn = "gluu-ldap.properties"
-        else:
-            # likely "couchbase"
-            conn = "gluu-couchbase.properties"
-
-        data["storage_configuration"]["baseDn"] = "o=gluu"
-        data["storage_configuration"]["type"] = "/etc/gluu/conf/gluu.properties"
-        data["storage_configuration"]["connection"] = f"/etc/gluu/conf/{conn}"
-        data["storage_configuration"]["salt"] = "/etc/gluu/conf/salt"
-
-    if storage == "redis":
-        redis_type = os.environ.get("GLUU_REDIS_TYPE", "STANDALONE")
-        if redis_type not in ("STANDALONE", "CLUSTER"):
-            redis_type = "STANDALONE"
-        data["storage_configuration"]["servers"] = os.environ.get("GLUU_REDIS_URL", "localhost:6379")
-
-    if storage != "h2":
-        data["storage_configuration"].pop("dbFileLocation", None)
+    data["storage_configuration"]["connection"] = f"/etc/gluu/conf/{conn}"
 
     with open("/opt/oxd-server/conf/oxd-server.yml", "w") as f:
         f.write(safe_dump(data))
@@ -92,32 +143,32 @@ def render_oxd_config():
 
 def main():
     persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
-    storage = os.environ.get("STORAGE", "h2")
 
-    if storage == "gluu_server_configuration":
-        render_salt(manager, "/app/templates/salt.tmpl", "/etc/gluu/conf/salt")
-        render_gluu_properties("/app/templates/gluu.properties.tmpl", "/etc/gluu/conf/gluu.properties")
+    render_salt(manager, "/app/templates/salt.tmpl", "/etc/gluu/conf/salt")
+    render_gluu_properties("/app/templates/gluu.properties.tmpl", "/etc/gluu/conf/gluu.properties")
 
-        if persistence_type in ("ldap", "hybrid"):
-            render_ldap_properties(
-                manager,
-                "/app/templates/gluu-ldap.properties.tmpl",
-                "/etc/gluu/conf/gluu-ldap.properties",
-            )
-            sync_ldap_truststore(manager)
+    if persistence_type in ("ldap", "hybrid"):
+        render_ldap_properties(
+            manager,
+            "/app/templates/gluu-ldap.properties.tmpl",
+            "/etc/gluu/conf/gluu-ldap.properties",
+        )
+        sync_ldap_truststore(manager)
 
-        if persistence_type in ("couchbase", "hybrid"):
-            render_couchbase_properties(
-                manager,
-                "/app/templates/gluu-couchbase.properties.tmpl",
-                "/etc/gluu/conf/gluu-couchbase.properties",
-            )
-            sync_couchbase_truststore(manager)
+    if persistence_type in ("couchbase", "hybrid"):
+        render_couchbase_properties(
+            manager,
+            "/app/templates/gluu-couchbase.properties.tmpl",
+            "/etc/gluu/conf/gluu-couchbase.properties",
+        )
+        sync_couchbase_truststore(manager)
 
-        if persistence_type == "hybrid":
-            render_hybrid_properties("/etc/gluu/conf/gluu-hybrid.properties")
+    if persistence_type == "hybrid":
+        render_hybrid_properties("/etc/gluu/conf/gluu-hybrid.properties")
 
     get_gluu_cert()
+
+    # if not os.path.isfile("/opt/oxd-server/oxd-server.yml"):
     render_oxd_config()
 
 

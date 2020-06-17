@@ -10,27 +10,11 @@ from pygluu.containerlib import PERSISTENCE_TYPES
 
 from settings import LOGGING_CONFIG
 
-STORAGE_TYPES = (
-    "h2",
-    "gluu_server_configuration",
-    "redis",
-)
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger("wait")
 
 
 def main():
-    storage = os.environ.get("STORAGE", "h2")
-    if storage not in STORAGE_TYPES:
-        logger.error(
-            "Unsupported STORAGE value; "
-            "please choose one of {}".format(", ".join(STORAGE_TYPES)),
-        )
-        sys.exit(1)
-
-    if storage in ("h2", "redis"):
-        return
-
     persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
     ldap_mapping = os.environ.get("GLUU_PERSISTENCE_LDAP_MAPPING", "default")
 

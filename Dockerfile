@@ -106,16 +106,8 @@ ENV GLUU_PERSISTENCE_TYPE=ldap \
 # oxD ENV
 # =======
 
-ENV APPLICATION_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
-    APPLICATION_KEYSTORE_CN="localhost" \
-    APPLICATION_KEYSTORE_PASSWORD_FILE=/etc/gluu/conf/app_keystore_password \
-    ADMIN_KEYSTORE_PATH=/opt/oxd-server/conf/oxd-server.keystore \
-    ADMIN_KEYSTORE_CN="localhost" \
-    ADMIN_KEYSTORE_PASSWORD_FILE=/etc/gluu/conf/admin_keystore_password \
-    STORAGE=h2 \
-    GLUU_SERVER_HOST="" \
-    GLUU_REDIS_URL="localhost:6379" \
-    GLUU_REDIS_TYPE=STANDALONE
+ENV APPLICATION_KEYSTORE_CN="localhost" \
+    ADMIN_KEYSTORE_CN="localhost"
 
 # ===========
 # Generic ENV

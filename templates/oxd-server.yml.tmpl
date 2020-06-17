@@ -24,22 +24,31 @@ enable_tracing: false
 tracer: 'jaeger'
 tracer_host: 'localhost'
 tracer_port: 5775
-storage: h2
+
+storage: gluu_server_configuration
 storage_configuration:
-  dbFileLocation: /opt/oxd-server/data/oxd_db
+  baseDn: o=gluu
+  type: /etc/gluu/conf/gluu.properties
+  salt: /etc/gluu/conf/salt
+  # default connection, will be overriden
+  connection: /etc/gluu/conf/gluu-ldap.properties
 
 # Connectors
 server:
   applicationConnectors:
     - type: https
       port: 8443
-      keyStorePath: /opt/oxd-server/conf/oxd-server.keystore
+      # keyStorePath: /opt/oxd-server/conf/oxd-server.keystore
+      keyStorePath: /etc/certs/oxd_application.keystore
+      # default, will be overriden
       keyStorePassword: example
       validateCerts: false
   adminConnectors:
     - type: https
       port: 8444
-      keyStorePath: /opt/oxd-server/conf/oxd-server.keystore
+      # keyStorePath: /opt/oxd-server/conf/oxd-server.keystore
+      keyStorePath: /etc/certs/oxd_admin.keystore
+      # default, will be overriden
       keyStorePassword: example
       validateCerts: false
 
