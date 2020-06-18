@@ -75,7 +75,12 @@ class Connector:
 
     @property
     def cert_cn(self):
-        return os.environ.get(f"GLUU_{self.type.upper()}_CERT_CN", "localhost")
+        conn_type = self.type.upper()
+
+        # backward-compat with 4.1.x
+        if f"{conn_type}_KEYSTORE_CN" in os.environ:
+            return os.environ.get(f"{conn_type}_KEYSTORE_CN", "localhost")
+        return os.environ.get(f"GLUU_{conn_type}_CERT_CN", "localhost")
 
     def sync_x509(self):
         try:
