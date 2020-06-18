@@ -75,7 +75,7 @@ class Connector:
 
     @property
     def cert_cn(self):
-        return os.environ.get(f"{self.type.upper()}_KEYSTORE_CN", "localhost")
+        return os.environ.get(f"GLUU_{self.type.upper()}_CERT_CN", "localhost")
 
     def sync_x509(self):
         try:
