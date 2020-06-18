@@ -80,7 +80,7 @@ class Connector:
         # backward-compat with 4.1.x
         if f"{conn_type}_KEYSTORE_CN" in os.environ:
             return os.environ.get(f"{conn_type}_KEYSTORE_CN", "localhost")
-        return os.environ.get(f"GLUU_{conn_type}_CERT_CN", "localhost")
+        return os.environ.get(f"GLUU_OXD_{conn_type}_CERT_CN", "localhost")
 
     def sync_x509(self):
         try:

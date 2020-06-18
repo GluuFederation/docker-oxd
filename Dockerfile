@@ -106,8 +106,8 @@ ENV GLUU_PERSISTENCE_TYPE=ldap \
 # oxD ENV
 # =======
 
-ENV GLUU_APPLICATION_CERT_CN="localhost" \
-    GLUU_ADMIN_CERT_CN="localhost"
+ENV GLUU_OXD_APPLICATION_CERT_CN="localhost" \
+    GLUU_OXD_ADMIN_CERT_CN="localhost"
 
 # ===========
 # Generic ENV
