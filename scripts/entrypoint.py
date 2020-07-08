@@ -142,6 +142,13 @@ def render_oxd_config():
 
     data["storage_configuration"]["connection"] = f"/etc/gluu/conf/{conn}"
 
+    ip_addresses = os.environ.get("GLUU_OXD_BIND_IP_ADDRESSES", "*")
+    data["bind_ip_addresses"] = [
+        addr.strip()
+        for addr in ip_addresses.split(",")
+        if addr
+    ]
+
     with open("/opt/oxd-server/conf/oxd-server.yml", "w") as f:
         f.write(safe_dump(data))
 
