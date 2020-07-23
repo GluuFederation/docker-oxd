@@ -41,7 +41,7 @@ The following environment variables are supported by the container:
 - `GLUU_SECRET_KUBERNETES_USE_KUBE_CONFIG`: Load credentials from `$HOME/.kube/config`, only useful for non-container environment (default to `false`).
 - `GLUU_WAIT_MAX_TIME`: How long the startup "health checks" should run (default to `300` seconds).
 - `GLUU_WAIT_SLEEP_DURATION`: Delay between startup "health checks" (default to `10` seconds).
-- `GLUU_MAX_RAM_PERCENTAGE`: Used in conjunction with Docker memory limitations (`docker run -m <mem>`) to identify the percentage of the maximum amount of heap memory.
+- `GLUU_MAX_RAM_PERCENTAGE`: Value passed to Java option `-XX:MaxRAMPercentage`.
 - `GLUU_PERSISTENCE_TYPE`: Persistence backend being used (one of `ldap`, `couchbase`, or `hybrid`; default to `ldap`).
 - `GLUU_PERSISTENCE_LDAP_MAPPING`: Specify data that should be saved in LDAP (one of `default`, `user`, `cache`, `site`, or `token`; default to `default`). Note this environment only takes effect when `GLUU_PERSISTENCE_TYPE` is set to `hybrid`.
 - `GLUU_LDAP_URL`: Address and port of LDAP server (default to `localhost:1636`); required if `GLUU_PERSISTENCE_TYPE` is set to `ldap` or `hybrid`.
@@ -55,3 +55,4 @@ The following environment variables are supported by the container:
 - `GLUU_OXD_APPLICATION_CERT_CN`: CommonName used in application certificate subject
 - `GLUU_OXD_ADMIN_CERT_CN`: CommonName used in admin certificate subject
 - `GLUU_OXD_BIND_IP_ADDRESSES`: A comma-separated host/IP address that are allowed to access oxd (default to `*`).
+- `GLUU_JAVA_OPTIONS`: Java options passed to entrypoint, i.e. `-Xmx1024m` (default to empty-string).
