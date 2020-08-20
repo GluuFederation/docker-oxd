@@ -56,3 +56,4 @@ The following environment variables are supported by the container:
 - `GLUU_OXD_ADMIN_CERT_CN`: CommonName used in admin certificate subject
 - `GLUU_OXD_BIND_IP_ADDRESSES`: A comma-separated host/IP address that are allowed to access oxd (default to `*`).
 - `GLUU_JAVA_OPTIONS`: Java options passed to entrypoint, i.e. `-Xmx1024m` (default to empty-string).
+- `GLUU_SSL_CERT_FROM_SECRETS`: Determine whether to get SSL cert from secrets backend (default to `false`). Note that the flag will take effect only if there's no mounted `/etc/certs/gluu_https.crt` file.
