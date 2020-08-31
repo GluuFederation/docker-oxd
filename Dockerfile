@@ -18,7 +18,7 @@ RUN apk update \
 # ==========
 
 ENV GLUU_VERSION=4.2.1-SNAPSHOT
-ENV GLUU_BUILD_DATE="2020-08-27 10:50"
+ENV GLUU_BUILD_DATE="2020-08-31 10:14"
 
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-server-${GLUU_VERSION}-distribution.zip -O /oxd.zip \
     && mkdir -p /opt/oxd-server \
