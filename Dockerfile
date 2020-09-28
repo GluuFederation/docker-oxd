@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:alpine-jre
+FROM adoptopenjdk/openjdk11:jre-11.0.8_10-alpine
 
 # symlink JVM
 RUN mkdir -p /usr/lib/jvm/default-jvm /usr/java/latest \
@@ -17,12 +17,12 @@ RUN apk update \
 # OXD server
 # ==========
 
-ENV GLUU_VERSION=4.2.0.Final
-ENV GLUU_BUILD_DATE="2020-07-14 05:06"
+ENV GLUU_VERSION=4.2.1.Final
+ENV GLUU_BUILD_DATE="2020-09-24 08:33"
 
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-server-${GLUU_VERSION}-distribution.zip -O /oxd.zip \
     && mkdir -p /opt/oxd-server \
-    && unzip /oxd.zip -d /opt/oxd-server \
+    && unzip -qq /oxd.zip -d /opt/oxd-server \
     && rm /oxd.zip \
     && rm -rf /opt/oxd-server/conf/oxd-server.keystore /opt/oxd-server/conf/oxd-server.yml
 
@@ -33,9 +33,10 @@ EXPOSE 8443 8444
 # ======
 
 RUN apk add --no-cache py3-cryptography
-COPY requirements.txt /tmp/requirements.txt
+COPY requirements.txt /app/requirements.txt
 RUN pip3 install -U pip \
-    && pip3 install --no-cache-dir -r /tmp/requirements.txt
+    && pip3 install --no-cache-dir -r /app/requirements.txt \
+    && rm -rf /src/pygluu-containerlib/.git
 
 # =======
 # Cleanup
@@ -116,7 +117,9 @@ ENV GLUU_OXD_APPLICATION_CERT_CN="localhost" \
 
 ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
     GLUU_WAIT_MAX_TIME=300 \
-    GLUU_WAIT_SLEEP_DURATION=10
+    GLUU_WAIT_SLEEP_DURATION=10 \
+    GLUU_JAVA_OPTIONS="" \
+    GLUU_SSL_CERT_FROM_SECRETS=false
 
 # ====
 # misc
@@ -125,8 +128,8 @@ ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
 LABEL name="oxd" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
-    version="4.2.0" \
-    release="01" \
+    version="4.2.1" \
+    release="02" \
     summary="Gluu oxd" \
     description="Client software to secure apps with OAuth 2.0, OpenID Connect, and UMA"
 

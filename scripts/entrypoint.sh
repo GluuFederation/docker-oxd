@@ -10,4 +10,11 @@ if [ ! -f /deploy/touched ]; then
 fi
 
 # run the server
-exec sh /opt/oxd-server/bin/oxd-start.sh
+# customized `/opt/oxd-server/bin/oxd-start.sh`
+exec java \
+    -Djava.net.preferIPv4Stack=true \
+    -XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=$GLUU_MAX_RAM_PERCENTAGE \
+    ${GLUU_JAVA_OPTIONS} \
+    -cp /opt/oxd-server/oxd-server.jar:/opt/oxd-server/lib/* \
+    org.gluu.oxd.server.OxdServerApplication server /opt/oxd-server/conf/oxd-server.yml
