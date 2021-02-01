@@ -131,7 +131,7 @@ LABEL name="oxd" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
     version="4.2.2" \
-    release="02" \
+    release="03" \
     summary="Gluu oxd" \
     description="Client software to secure apps with OAuth 2.0, OpenID Connect, and UMA"
 
