@@ -11,14 +11,14 @@ RUN mkdir -p /usr/lib/jvm/default-jvm /usr/java/latest \
 
 RUN apk update \
     && apk add --no-cache openssl py3-pip tini curl \
-    && apk add --no-cache --virtual build-deps unzip wget git
+    && apk add --no-cache --virtual build-deps unzip wget git gcc musl-dev python3-dev libffi-dev openssl-dev
 
 # ==========
 # OXD server
 # ==========
 
-ENV GLUU_VERSION=4.2.2.Final
-ENV GLUU_BUILD_DATE="2020-12-22 12:31"
+ENV GLUU_VERSION=4.2.3.Final
+ENV GLUU_BUILD_DATE="2021-02-02 12:49"
 
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-server-${GLUU_VERSION}-distribution.zip -O /oxd.zip \
     && mkdir -p /opt/oxd-server \
@@ -32,7 +32,6 @@ EXPOSE 8443 8444
 # Python
 # ======
 
-RUN apk add --no-cache py3-cryptography
 COPY requirements.txt /app/requirements.txt
 RUN pip3 install -U pip \
     && pip3 install --no-cache-dir -r /app/requirements.txt \
@@ -130,8 +129,8 @@ ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
 LABEL name="oxd" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
-    version="4.2.2" \
-    release="03" \
+    version="4.2.3" \
+    release="01" \
     summary="Gluu oxd" \
     description="Client software to secure apps with OAuth 2.0, OpenID Connect, and UMA"
 
