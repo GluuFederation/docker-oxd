@@ -14,8 +14,8 @@ RUN apk update \
 # OXD server
 # ==========
 
-ENV GLUU_VERSION=4.2.3.Final
-ENV GLUU_BUILD_DATE="2021-02-02 12:49"
+ENV GLUU_VERSION=4.3.0-SNAPSHOT
+ENV GLUU_BUILD_DATE="2021-02-05 14:32"
 
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxd-server/${GLUU_VERSION}/oxd-server-${GLUU_VERSION}-distribution.zip -O /oxd.zip \
     && mkdir -p /opt/oxd-server \
@@ -126,8 +126,8 @@ ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
 LABEL name="oxd" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
-    version="4.2.3" \
-    release="01" \
+    version="4.3.0" \
+    release="dev" \
     summary="Gluu oxd" \
     description="Client software to secure apps with OAuth 2.0, OpenID Connect, and UMA"
 
