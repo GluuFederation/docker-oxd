@@ -12,21 +12,17 @@ from pygluu.containerlib.persistence import render_salt
 from pygluu.containerlib.persistence import sync_couchbase_truststore
 from pygluu.containerlib.persistence import sync_ldap_truststore
 from pygluu.containerlib.utils import cert_to_truststore
-from pygluu.containerlib.utils import get_server_certificate
 from pygluu.containerlib.utils import get_random_chars
 from pygluu.containerlib.utils import exec_cmd
-from pygluu.containerlib.utils import as_boolean
+from pygluu.containerlib.utils import generate_ssl_certkey
 
 
 manager = get_manager()
 
 
-def get_gluu_cert():
+def get_web_cert():
     if not os.path.isfile("/etc/certs/gluu_https.crt"):
-        if as_boolean(os.environ.get("GLUU_SSL_CERT_FROM_SECRETS", False)):
-            manager.secret.to_file("ssl_cert", "/etc/certs/gluu_https.crt")
-        else:
-            get_server_certificate(manager.config.get("hostname"), 443, "/etc/certs/gluu_https.crt")
+        manager.secret.to_file("ssl_cert", "/etc/certs/gluu_https.crt")
 
     cert_to_truststore(
         "gluu_https",
@@ -34,18 +30,6 @@ def get_gluu_cert():
         "/usr/lib/jvm/default-jvm/jre/lib/security/cacerts",
         "changeit",
     )
-
-
-def generate_x509(cert_file, key_file, cert_cn):
-    out, err, code = exec_cmd(
-        "openssl req -x509 -newkey rsa:2048 "
-        f"-keyout {key_file} "
-        f"-out {cert_file} "
-        f"-subj '/CN={cert_cn}' "
-        "-days 365 "
-        "-nodes"
-    )
-    assert code == 0, "Failed to generate application cert and key; reason={}".format(err.decode())
 
 
 def generate_keystore(cert_file, key_file, keystore_file, keystore_password):
@@ -91,7 +75,16 @@ class Connector:
             self.manager.secret.to_file(f"oxd_{self.type}_cert", self.cert_file)
             self.manager.secret.to_file(f"oxd_{self.type}_key", self.key_file)
         except TypeError:
-            generate_x509(self.cert_file, self.key_file, self.cert_cn)
+            generate_ssl_certkey(
+                f"oxd_{self.type}",
+                self.manager.config.get("admin_email"),
+                self.manager.config.get("hostname"),
+                self.manager.config.get("orgName"),
+                self.manager.config.get("country_code"),
+                self.manager.config.get("state"),
+                self.manager.config.get("city"),
+                extra_dns=[self.cert_cn],
+            )
             # save cert and key to secrets for later use
             self.manager.secret.from_file(f"oxd_{self.type}_cert", self.cert_file)
             self.manager.secret.from_file(f"oxd_{self.type}_key", self.key_file)
@@ -123,18 +116,8 @@ class Connector:
 
 
 def render_oxd_config():
-    app_connector = Connector(manager, "application")
-    app_connector.sync()
-    admin_connector = Connector(manager, "admin")
-    admin_connector.sync()
-
     with open("/app/templates/oxd-server.yml.tmpl") as f:
         data = safe_load(f.read())
-
-    data["server"]["applicationConnectors"][0]["keyStorePassword"] = app_connector.get_keystore_password()
-    data["server"]["applicationConnectors"][0]["keyStorePath"] = app_connector.keystore_file
-    data["server"]["adminConnectors"][0]["keyStorePassword"] = admin_connector.get_keystore_password()
-    data["server"]["adminConnectors"][0]["keyStorePath"] = admin_connector.keystore_file
 
     persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
 
@@ -144,7 +127,23 @@ def render_oxd_config():
         # likely "couchbase"
         conn = "gluu-couchbase.properties"
 
-    data["storage_configuration"]["connection"] = f"/etc/gluu/conf/{conn}"
+    data["storage"] = "gluu_server_configuration"
+    data["storage_configuration"] = {
+        "baseDn": "o=gluu",
+        "type": "/etc/gluu/conf/gluu.properties",
+        "salt": "/etc/gluu/conf/salt",
+        "connection": f"/etc/gluu/conf/{conn}",
+    }
+
+    app_connector = Connector(manager, "application")
+    app_connector.sync()
+    admin_connector = Connector(manager, "admin")
+    admin_connector.sync()
+
+    data["server"]["applicationConnectors"][0]["keyStorePassword"] = app_connector.get_keystore_password()
+    data["server"]["applicationConnectors"][0]["keyStorePath"] = app_connector.keystore_file
+    data["server"]["adminConnectors"][0]["keyStorePassword"] = admin_connector.get_keystore_password()
+    data["server"]["adminConnectors"][0]["keyStorePath"] = admin_connector.keystore_file
 
     ip_addresses = os.environ.get("GLUU_OXD_BIND_IP_ADDRESSES", "*")
     data["bind_ip_addresses"] = [
@@ -153,6 +152,7 @@ def render_oxd_config():
         if addr
     ]
 
+    # write config
     with open("/opt/oxd-server/conf/oxd-server.yml", "w") as f:
         f.write(safe_dump(data))
 
@@ -182,7 +182,7 @@ def main():
     if persistence_type == "hybrid":
         render_hybrid_properties("/etc/gluu/conf/gluu-hybrid.properties")
 
-    get_gluu_cert()
+    get_web_cert()
 
     # if not os.path.isfile("/opt/oxd-server/oxd-server.yml"):
     render_oxd_config()
