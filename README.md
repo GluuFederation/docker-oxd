@@ -52,6 +52,8 @@ The following environment variables are supported by the container:
 - `GLUU_COUCHBASE_SCAN_CONSISTENCY`: Default scan consistency; one of `not_bounded`, `request_plus`, or `statement_plus` (default to `not_bounded`).
 - `GLUU_COUCHBASE_BUCKET_PREFIX`: Prefix for Couchbase buckets (default to `gluu`).
 - `GLUU_COUCHBASE_TRUSTSTORE_ENABLE`: Enable truststore for encrypted Couchbase connection (default to `true`).
+- `GLUU_COUCHBASE_KEEPALIVE_INTERVAL`: Keep-alive interval for Couchbase connection (default to `30000` milliseconds).
+- `GLUU_COUCHBASE_KEEPALIVE_TIMEOUT`: Keep-alive timeout for Couchbase connection (default to `2500` milliseconds).
 - `GLUU_OXD_APPLICATION_CERT_CN`: CommonName used in application certificate subject
 - `GLUU_OXD_ADMIN_CERT_CN`: CommonName used in admin certificate subject
 - `GLUU_OXD_BIND_IP_ADDRESSES`: A comma-separated host/IP address that are allowed to access oxd (default to `*`).
