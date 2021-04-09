@@ -71,10 +71,13 @@ class Connector:
         return os.environ.get(f"GLUU_OXD_{conn_type}_CERT_CN", "localhost")
 
     def sync_x509(self):
-        try:
+        cert = self.manager.secret.get(f"oxd_{self.type}_cert")
+        key = self.manager.secret.get(f"oxd_{self.type}_key")
+
+        if cert and key:
             self.manager.secret.to_file(f"oxd_{self.type}_cert", self.cert_file)
             self.manager.secret.to_file(f"oxd_{self.type}_key", self.key_file)
-        except TypeError:
+        else:
             generate_ssl_certkey(
                 f"oxd_{self.type}",
                 self.manager.config.get("admin_email"),
@@ -98,12 +101,13 @@ class Connector:
         return password
 
     def sync_keystore(self):
-        # if there are no secrets, ``TypeError`` will be thrown
-        try:
+        jks = self.manager.secret.get(f"oxd_{self.type}_jks_base64")
+
+        if jks:
             self.manager.secret.to_file(
                 f"oxd_{self.type}_jks_base64", self.keystore_file, decode=True, binary_mode=True,
             )
-        except TypeError:
+        else:
             generate_keystore(self.cert_file, self.key_file, self.keystore_file, self.get_keystore_password())
             # save keystore to secrets for later use
             self.manager.secret.from_file(
